@@ -3,14 +3,13 @@
 
 #include	<sys/types.h>
 #include	<stdint.h>
+#include	<time.h>
 
 #ifndef	byte
-//#define	byte		unsigned char
 #define	byte		uint8_t
 #endif
 
 #ifndef	word
-//#define	word		unsigned short
 #define	word		uint32_t
 #endif
 
@@ -51,6 +50,9 @@
 #ifndef	OFF
 #define	OFF		FALSE
 #endif
+
+
+typedef	struct	tm		tTime;
 
 #endif
 

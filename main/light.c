@@ -12,29 +12,15 @@
 #include	"light.h"
 #include	"neopixel.h"
 #include	"globals.h"
+#include	"misc.h"
 
-#define	RGBW_LED_R_PORT		21
-#define	RGBW_LED_G_PORT		22
-#define	RGBW_LED_B_PORT		23
-#define	RGBW_LED_W_PORT		4
-#define	NEOPIXEL_LED_PORT	18
-
-#define	RGBW_LED_TIMER_MODE		LEDC_HIGH_SPEED_MODE
-#define	RGBW_LED_TIMER			LEDC_TIMER_0
-#define	RGBW_LED_CH_R	0
-#define	RGBW_LED_CH_G	1
-#define	RGBW_LED_CH_B	2
-#define	RGBW_LED_CH_W	3
-
-// NeoPixel configure
-#define	NEOPIXEL_SK6812
-#define	NEOPIXEL_RMT_CHANNEL		RMT_CHANNEL_1
+#define	NEOPIXEL_NEW_DRIVER
 
 static	Bool				rgbw_need_update;
 static	pixel_settings_t	Px;
 
 extern	void
-light_init(void)
+initialize_light(void)
 {
     ledc_timer_config_t ledc_timer = {
         .duty_resolution = LEDC_TIMER_8_BIT,
@@ -44,75 +30,94 @@ light_init(void)
     };
     ledc_channel_config_t ledc_channel[] = {
         {
-            .channel    = LEDC_CHANNEL_0,
+            .channel    = RGBW_LED_CH_R,
             .duty       = 0,
-            .gpio_num   = RGBW_LED_CH_R,
+            .gpio_num   = RGBW_LED_R_PORT,
             .speed_mode = RGBW_LED_TIMER_MODE,
             .hpoint     = 0,
             .timer_sel  = RGBW_LED_TIMER
         },{
-            .channel    = LEDC_CHANNEL_1,
+            .channel    = RGBW_LED_CH_G,
             .duty       = 0,
-            .gpio_num   = RGBW_LED_CH_G,
+            .gpio_num   = RGBW_LED_G_PORT,
             .speed_mode = RGBW_LED_TIMER_MODE,
             .hpoint     = 0,
             .timer_sel  = RGBW_LED_TIMER
         },{
-            .channel    = LEDC_CHANNEL_2,
+            .channel    = RGBW_LED_CH_B,
             .duty       = 0,
-            .gpio_num   = RGBW_LED_CH_B,
+            .gpio_num   = RGBW_LED_B_PORT,
             .speed_mode = RGBW_LED_TIMER_MODE,
             .hpoint     = 0,
             .timer_sel  = RGBW_LED_TIMER
         },{
-            .channel    = LEDC_CHANNEL_3,
+            .channel    = RGBW_LED_CH_W,
             .duty       = 0,
-            .gpio_num   = RGBW_LED_CH_W,
+            .gpio_num   = RGBW_LED_W_PORT,
             .speed_mode = RGBW_LED_TIMER_MODE,
             .hpoint     = 0,
             .timer_sel  = RGBW_LED_TIMER
         },
 	};
 
-	if		(  nr_rgbw_led > 0 )	{
-		ledc_timer_config(&ledc_timer);
-		for (int ch = 0; ch < 4; ch++) {
-			ledc_channel_config(&ledc_channel[ch]);
-		}
+#if	(NR_RGBW_LED > 0)
+	ledc_timer_config(&ledc_timer);
+	for (int ch = 0; ch < 4; ch++) {
+		ledc_channel_config(&ledc_channel[ch]);
 	}
+#endif
 	rgbw_need_update = FALSE;
-	if		( nr_neopixel_led > 0 )	{
-		neopixel_init(NEOPIXEL_LED_PORT, NEOPIXEL_RMT_CHANNEL);
+#if	(NR_NEOPIXEL_LED > 0)
+#if	0
+	gpio_set_direction(NEOPIXEL_LED_PORT, GPIO_MODE_OUTPUT);
+	gpio_set_level(NEOPIXEL_LED_PORT, 0);
+	msleep(2);
+#endif
 
-		Px.pixels = (uint8_t *)malloc(sizeof(uint32_t) * nr_neopixel_led);
-		memclear(Px.pixels,sizeof(uint32_t) * nr_neopixel_led);
-		Px.pixel_count = nr_neopixel_led;
+#ifndef	NEOPIXEL_NEW_DRIVER
+	neopixel_init(NEOPIXEL_LED_PORT, NEOPIXEL_RMT_CHANNEL);
+#endif
+	memset(&Px, 0, sizeof(Px));
+	Px.pixels = (uint8_t *)malloc(sizeof(uint32_t) * NR_NEOPIXEL_LED);
+	memclear(Px.pixels,sizeof(uint32_t) * NR_NEOPIXEL_LED);
+	Px.pixel_count = NR_NEOPIXEL_LED;
 
-		memset(&Px.timings, 0, sizeof(Px.timings));
-		Px.timings.mark.level0 = 1;
-		Px.timings.space.level0 = 1;
-		Px.timings.mark.duration0 = 12;
+	memset(&Px.timings, 0, sizeof(Px.timings));
+	Px.timings.mark.level0 = 1;
+	Px.timings.space.level0 = 1;
+	Px.timings.mark.duration0 = 12;
 #ifdef	NEOPIXEL_WS2812
-		strcpy(px.color_order, "GRB");
-		Px.nbits = 24;
-		Px.timings.mark.duration1 = 14;
-		Px.timings.space.duration0 = 7;
-		Px.timings.space.duration1 = 16;
-		Px.timings.reset.duration0 = 600;
-		Px.timings.reset.duration1 = 600;
+	strcpy(px.color_order, "GRB");
+	Px.nbits = 24;
+	Px.timings.mark.duration1 = 14;
+	Px.timings.space.duration0 = 7;
+	Px.timings.space.duration1 = 16;
+	Px.timings.reset.duration0 = 600;
+	Px.timings.reset.duration1 = 600;
 #endif
 #ifdef	NEOPIXEL_SK6812
-		strcpy(Px.color_order, "GRBW");
-		Px.nbits = 32;
-		Px.timings.mark.duration1 = 12;
-		Px.timings.space.duration0 = 6;
-		Px.timings.space.duration1 = 18;
-		Px.timings.reset.duration0 = 900;
-		Px.timings.reset.duration1 = 900;
+	strcpy(Px.color_order, "GRBW");
+	Px.nbits = 32;
+	Px.timings.mark.duration1 = 12;
+	Px.timings.space.duration0 = 6;
+	Px.timings.space.duration1 = 18;
+	Px.timings.reset.duration0 = 900;
+	Px.timings.reset.duration1 = 900;
 #endif
-		Px.brightness = 0x80;
-		np_show(&Px, NEOPIXEL_RMT_CHANNEL);
-	}
+	Px.brightness = 0x80;
+#ifdef	NEOPIXEL_NEW_DRIVER
+	Px.pin = NEOPIXEL_LED_PORT;
+	Px.rmtChannel = NEOPIXEL_RMT_CHANNEL;
+	neopixel_init(&Px);
+#endif
+	msleep(10);
+	np_clear(&Px);
+#ifdef	NEOPIXEL_NEW_DRIVER
+	np_show(&Px);
+#else
+	np_show(&Px, NEOPIXEL_RMT_CHANNEL);
+#endif
+#endif
 }
 
 extern	void
@@ -129,35 +134,52 @@ light_set_color(
 	int		b,
 	int		w)
 {
-	if		( nr_rgbw_led > 0 )	{
-		if	( no < nr_rgbw_led )	{
-			ledc_set_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_R, r);
-			ledc_set_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_G, g);
-			ledc_set_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_B, b);
-			ledc_set_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_W, w);
-			rgbw_need_update = TRUE;
-		}
-		no -= nr_rgbw_led;
-	}
-	if		( nr_neopixel_led > 0 )	{
-		np_set_pixel_rgbw(&Px, no, r, g, b, w);
-	}
+#if	(NR_RGBW_LED > 0)
+	ledc_set_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_R, r);
+	ledc_set_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_G, g);
+	ledc_set_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_B, b);
+	ledc_set_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_W, w);
+	rgbw_need_update = TRUE;
+	no -= NR_RGBW_LED;
+#endif
+#if	(NR_NEOPIXEL_LED > 0 )
+	np_set_pixel_rgbw(&Px, no, r, g, b, w);
+#endif
 }
 
 extern	void
 light_update(void)
 {
-	if ( nr_rgbw_led > 0 )	{
-		if	( rgbw_need_update )	{
-			ledc_update_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_R);
-			ledc_update_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_G);
-			ledc_update_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_B);
-			ledc_update_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_W);
-			rgbw_need_update = FALSE;
-		}
+#if	(NR_RGBW_LED > 0)
+	if	( rgbw_need_update )	{
+		ledc_update_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_R);
+		ledc_update_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_G);
+		ledc_update_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_B);
+		ledc_update_duty(RGBW_LED_TIMER_MODE, RGBW_LED_CH_W);
+		rgbw_need_update = FALSE;
 	}
-	if	( nr_neopixel_led > 0 )	{
-		np_show(&Px, NEOPIXEL_RMT_CHANNEL);
-	}
+#endif
+#if	(NR_NEOPIXEL_LED > 0 )
+#ifdef	NEOPIXEL_NEW_DRIVER
+	np_show(&Px);
+#else
+	np_show(&Px, NEOPIXEL_RMT_CHANNEL);
+#endif
+#endif
 }
 			 
+extern	void
+light_set_all_color(
+	int		r,
+	int		g,
+	int		b,
+	int		w)
+{
+	int		i;
+
+	for ( i = 0 ; i < ( NR_RGBW_LED + NR_NEOPIXEL_LED ) ; i ++ )	{
+		light_set_color(i, r, g, b, w);
+	}
+	light_update();
+	msleep(200);
+}

@@ -12,7 +12,6 @@ typedef	struct	{
 	int		(*func)(char *path, char *body, Bool debug);
 }	BT_HandlerTable_s;
 
-extern	void	initialize_nvs(void);
 extern	void	initialize_bt(const char *deviceName);
 extern	void	bt_send(uint8_t *data, size_t len);
 extern	void	bt_send_string(char *str);

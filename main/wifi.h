@@ -3,11 +3,13 @@
 
 #include	"types.h"
 
-extern	void	initialize_wifi(void);
-extern	void	scan_wifi_start(void);
-extern	void	scan_wifi_get(char *p);
-extern	void	scan_wifi_stop(void);
-extern	void	stop_wifi(void);
-extern	void	connect_wifi(char *ssid, char *password);
+extern	esp_err_t	initialize_wifi(void);
+extern	void		wifi_ap_start(char *ssid, char *pass);
+extern	void		wifi_scan_start(void);
+extern	void		wifi_scan_get(char *p);
+extern	void		wifi_scan_stop(void);
+extern	void		wifi_stop(void);
+extern	void		wifi_connect(char *ssid, char *password);
+extern	Bool		wifi_is_valid(void);
 
 #endif
