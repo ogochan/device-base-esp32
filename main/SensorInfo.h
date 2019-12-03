@@ -1,0 +1,1 @@
+../../sensor-farmware/main/SensorInfo.h
