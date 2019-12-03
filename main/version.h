@@ -1,0 +1,7 @@
+#define PROJECT_NAME	"jar-garden"
+#define APPL_VERSION	"009901-2019/12/03-11:36:18(JST)"
+#define MAJOR_VERSION	(100 - 100)
+#define MINOR_VERSION	(199 - 100)
+#define MICRO_VERSION	(101 - 100)
+#define BUILD_DATE	"2019/12/03"
+#define BUILD_TIME	"11:36:18(JST)"
