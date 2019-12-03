@@ -85,7 +85,7 @@ ENTER_FUNC;
 #else
 	count_reset = 3;
 #endif
-	ESP_LOGI(TAG, "reset count %d", count_reset);
+	dbgprintf( "reset count %d", count_reset);
 	switch(count_reset) {
 	  case	3:	//	setup mode
 		light_set_all_color(0, 64, 128, 64);
@@ -109,7 +109,7 @@ ENTER_FUNC;
 	set_reset(count_reset);
 	commit_reset();
 	close_reset();
-	ESP_LOGI(TAG, "reset count %d", count_reset);
+	dbgprintf( "reset count %d", count_reset);
 	if	( health_check == 0 )	{
 		/*	OK	*/
 		light_set_all_color(0, 0, 0, 0);
@@ -126,7 +126,7 @@ ENTER_FUNC;
 	while	( !wifi_is_valid() )	{
 		msleep(1000);
 	}
-	ESP_LOGI(TAG, "network is OK");
+	dbgmsg( "network is OK");
 
 	api_get_settings();
 	msleep(1000);
@@ -138,7 +138,7 @@ ENTER_FUNC;
 	while	( !sntp_valid() )	{
 		msleep(1000*10);
 	}
-	ESP_LOGI(TAG, "all preparation is done");
+	dbgmsg( "all preparation is done");
 	initialize_schedule();
 	api_get_schedule();
 	start_schedule();
@@ -156,7 +156,7 @@ ENTER_FUNC;
 	start_bt(4096);
 #endif
 	
-	ESP_LOGI(TAG, "%d bytes free after system initialize", (int)xPortGetFreeHeapSizeCaps(MALLOC_CAP_8BIT));
+	dbgprintf( "%d bytes free after system initialize", (int)xPortGetFreeHeapSizeCaps(MALLOC_CAP_8BIT));
 #if	0
 	_wifi_scan(NULL, body_buffer, true);
 	_wifi_config(NULL, "{ \"ssid\": \"LANLANLAN24\", \"pass\": \"8309f815520d2\"}", true);

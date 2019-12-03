@@ -35,31 +35,31 @@ _http_event_handle(
 {
 	switch(evt->event_id) {
 	  case HTTP_EVENT_ERROR:
-		ESP_LOGI(TAG, "HTTP_EVENT_ERROR");
+		dbgmsg( "HTTP_EVENT_ERROR");
 		break;
 	  case HTTP_EVENT_ON_CONNECTED:
-		ESP_LOGI(TAG, "HTTP_EVENT_ON_CONNECTED");
+		dbgmsg( "HTTP_EVENT_ON_CONNECTED");
 		break;
 	  case HTTP_EVENT_HEADER_SENT:
-		ESP_LOGI(TAG, "HTTP_EVENT_HEADER_SENT");
+		dbgmsg( "HTTP_EVENT_HEADER_SENT");
 		break;
 	  case HTTP_EVENT_ON_HEADER:
-		ESP_LOGI(TAG, "HTTP_EVENT_ON_HEADER");
+		dbgmsg( "HTTP_EVENT_ON_HEADER");
 		dbgprintf("%.*s", evt->data_len, (char*)evt->data);
 		break;
 	  case HTTP_EVENT_ON_DATA:
 #if	0
-		ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+		dbgprintf( "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
 		if (!esp_http_client_is_chunked_response(evt->client)) {
 			printf("%.*s", evt->data_len, (char*)evt->data);
 		}
 #endif
 		break;
 	  case HTTP_EVENT_ON_FINISH:
-		ESP_LOGI(TAG, "HTTP_EVENT_ON_FINISH");
+		dbgmsg( "HTTP_EVENT_ON_FINISH");
 		break;
 	  case HTTP_EVENT_DISCONNECTED:
-		ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
+		dbgmsg( "HTTP_EVENT_DISCONNECTED");
 		break;
 	}
 	return ESP_OK;
@@ -118,7 +118,7 @@ httpc_post_open(
 	} else {
 		strcpy(url_buff, path);
 	}
-	ESP_LOGI(TAG, "POST URL: %s", url_buff);
+	dbgprintf( "POST URL: %s", url_buff);
 	ret = esp_http_client_set_url(client, url_buff);
 	if ( ret != ESP_OK )	goto	err;
 	ret = esp_http_client_set_method(client, HTTP_METHOD_POST);
@@ -142,7 +142,7 @@ httpc_get_open(
 	} else {
 		strcpy(url_buff, path);
 	}
-	ESP_LOGI(TAG, "GET  URL: %s", url_buff);
+	dbgprintf( "GET  URL: %s", url_buff);
 	ret = esp_http_client_set_url(client, url_buff);
 	if ( ret != ESP_OK )	goto	err;
 	ret = esp_http_client_set_method(client, HTTP_METHOD_GET);
@@ -197,7 +197,7 @@ httpc_get(
 
 	sprintf(url_buff, "%s%s", host, path);
 #ifdef	TRACE
-	ESP_LOGI(TAG, "URL: %s", url_buff);
+	dbgprintf( "URL: %s", url_buff);
 #endif
 	ret = esp_http_client_set_url(client, url_buff);
 	if ( ret != ESP_OK )	goto	err;
@@ -243,7 +243,7 @@ static void print_sha256 (const uint8_t *image_hash, const char *label)
     for (int i = 0; i < HASH_LEN; ++i) {
         sprintf(&hash_print[i * 2], "%02x", image_hash[i]);
     }
-    ESP_LOGI(TAG, "%s: %s", label, hash_print);
+    dbgprintf( "%s: %s", label, hash_print);
 }
 #endif
 
@@ -369,7 +369,7 @@ ENTER_FUNC;
 				break;
 			}
 			binary_file_length += data_read;
-			dbgprintf("Written image length %d", binary_file_length);
+			//dbgprintf("Written image length %d", binary_file_length);
 			data_read = esp_http_client_read(client, Message, SIZE_MESSAGE_BUFFER);
 		}	while	( data_read > 0 );
 		if	( data_read == 0 )	{
@@ -423,7 +423,7 @@ httpc_ota(
 	static	ota_args	args;
 
 	ota_running = TRUE;
-	ESP_LOGI(TAG, "OTA URI: %s%s", host, path);
+	dbgprintf("OTA URI: %s%s", host, path);
 
 	strcpy(args.host, host);
 	strcpy(args.path, path);

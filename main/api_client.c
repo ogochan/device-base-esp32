@@ -53,9 +53,9 @@ api_device_new(
 	sprintf(Message, "{\"user\":\"%s\",\"pass\":\"%s\",\"class\":\"jar-garden\"}", user, pass);
 	if	( httpc_post(client, CONSOLE_HOST, "/devices", (uint8_t *)Message, strlen(Message)) != ESP_OK )	goto	err;
 	status =  httpc_get_status(client);
-	ESP_LOGI(TAG, "status: %d", status);
+	dbgprintf("status: %d", status);
 	if	( ( size = httpc_get_data(client, (uint8_t *)ResponseMessage, SIZE_RESPONSE_BUFFER) ) < 0 )	goto	err;
-	ESP_LOGI(TAG, "get: %s", ResponseMessage);
+	dbgprintf("get: %s", ResponseMessage);
 	if		( status != 200 )	goto	err;
 	root = cJSON_Parse(ResponseMessage);
 	if	( root )	{
@@ -65,7 +65,7 @@ api_device_new(
 			node = cJSON_GetObjectItemCaseSensitive(root, "uuid");
 			if	( cJSON_IsString(node) )	{
 				strncpy(device_id, node->valuestring, SIZE_UUID+1);
-				ESP_LOGI(TAG, "device uuid: %s", device_id);
+				dbgprintf("device uuid: %s", device_id);
 				rc = TRUE;
 			}
 		}
@@ -94,10 +94,10 @@ api_session_new(
 	sprintf(Message, "{\"user\":\"%s\",\"pass\":\"%s\",\"device\":\"%s\"}", user, pass, device_id);
 	if ( httpc_post(client, CONSOLE_HOST, "/session", (uint8_t *)Message, strlen(Message)) != ESP_OK )	goto	err;
 	status =  httpc_get_status(client);
-	ESP_LOGI(TAG, "status: %d", status);
+	dbgprintf("status: %d", status);
 	if	( status != 200 )	goto	err;
 	if	( ( size = httpc_get_data(client, (uint8_t *)ResponseMessage, SIZE_RESPONSE_BUFFER) ) < 0 )	goto	err;
-	ESP_LOGI(TAG, "get: %s", ResponseMessage);
+	dbgprintf("get: %s", ResponseMessage);
 	root = cJSON_Parse(ResponseMessage);
 	if	( root )	{
 		node = cJSON_GetObjectItemCaseSensitive(root, "code");
@@ -107,7 +107,7 @@ api_session_new(
 			if		(	( node )
 					&&	( cJSON_IsString(node) ) )	{
 				strncpy(session_key, node->valuestring, SIZE_UUID+1);
-				ESP_LOGI(TAG, "session key: %s", session_key);
+				dbgprintf("session key: %s", session_key);
 				rc = TRUE;
 			}
 		}
@@ -138,16 +138,16 @@ api_post_data(
 	httpc_set_header(client, "X-SESSION-KEY", session_key);
 	if ( httpc_post(client, CONSOLE_HOST, real_path, data, size) != ESP_OK )	goto	err;
 	status =  httpc_get_status(client);
-	ESP_LOGI(TAG, "status: %d", status);
+	dbgprintf("status: %d", status);
 	if	( status != 201 )	goto	err;
 	if	( httpc_get_data(client, (uint8_t *)ResponseMessage, SIZE_RESPONSE_BUFFER) < 0 )	goto	err;
-	ESP_LOGI(TAG, "get: %s", ResponseMessage);
+	dbgprintf("get: %s", ResponseMessage);
 	root = cJSON_Parse(ResponseMessage);
 	if	( root )	{
 		node = cJSON_GetObjectItemCaseSensitive(root, "code");
 		if 		(	( cJSON_IsNumber(node) )
 				&&	( node->valueint == 0  ))	{
-			ESP_LOGI(TAG, "OK");
+			dbgmsg("OK");
 			rc = TRUE;
 		}
 		cJSON_Delete(root);
@@ -175,10 +175,10 @@ api_get_data(
 	esp_http_client_set_header(client, "X-SESSION-KEY", session_key);
 	if ( httpc_get(client, CONSOLE_HOST, real_path) != ESP_OK )	goto	err;
 	status =  httpc_get_status(client);
-	ESP_LOGI(TAG, "status: %d", status);
+	dbgprintf("status: %d", status);
 	if	( status != 200 )	goto	err;
 	rc = httpc_get_data(client, data, size);
-	ESP_LOGI(TAG, "get: %s", ResponseMessage);
+	dbgprintf("get: %s", ResponseMessage);
   err:;
 	return	(rc);
 }
@@ -222,7 +222,7 @@ ENTER_FUNC;
 		if		(	( node )
 				&&	( cJSON_IsString(node) ) )	{
 			setenv("TZ", node->valuestring, 1);
-			ESP_LOGI(TAG, "TZ=%s", getenv("TZ"));
+			dbgprintf("TZ=%s", getenv("TZ"));
 			tzset();
 		}
 		sensor = cJSON_GetObjectItemCaseSensitive(root, "sensor");
@@ -351,7 +351,7 @@ ENTER_FUNC;
 		cJSON_ArrayForEach(entry, root)	{
 			nsc ++;
 		}
-		ESP_LOGI(TAG, "nsc = %d", nsc);
+		dbgprintf("nsc = %d", nsc);
 		cJSON_ArrayForEach(entry, root)	{
 			wday = cJSON_GetObjectItemCaseSensitive(entry, "day_of_week");
 			sc_wday = 0;
@@ -381,7 +381,7 @@ ENTER_FUNC;
 			cJSON_ArrayForEach(event, led)	{
 				nev ++;
 			}
-			ESP_LOGI(TAG, "nev = %d", nev);
+			dbgprintf("nev = %d", nev);
 			ev = (tScheduleEvent *)malloc(nev * sizeof(tScheduleEvent));
 			i = 0;
 			cJSON_ArrayForEach(event, led)	{
@@ -420,13 +420,13 @@ ENTER_FUNC;
 			}
 			push_schedule(sc_wday, nev, ev);
 			for	( i = 0; i < nev ; i ++ )	{
-				ESP_LOGI(TAG, "%d (%d) %d %d %d %d",
-						 (int)ev[i].at,
-						 (int)ev[i].led.no,
-						 (int)ev[i].led.red,
-						 (int)ev[i].led.green,
-						 (int)ev[i].led.blue,
-						 (int)ev[i].led.white);
+				dbgprintf("%d (%d) %d %d %d %d",
+						  (int)ev[i].at,
+						  (int)ev[i].led.no,
+						  (int)ev[i].led.red,
+						  (int)ev[i].led.green,
+						  (int)ev[i].led.blue,
+						  (int)ev[i].led.white);
 			}
 		}
 		cJSON_Delete(root);

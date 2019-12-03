@@ -50,20 +50,20 @@ wifi_event_handler(
         //esp_wifi_connect();
         break;
 	  case IP_EVENT_STA_GOT_IP:
-        ESP_LOGI(TAG, "got ip:%s",
+        dbgprintf( "got ip:%s",
                  ip4addr_ntoa(&event->ip_info.ip));
 		wifi_started = TRUE;
         break;
 	  case SYSTEM_EVENT_STA_DISCONNECTED:
 		//esp_wifi_connect();
-		ESP_LOGI(TAG,"connect to the AP fail\n");
+		dbgmsg("connect to the AP fail\n");
 		break;
 	  case	WIFI_EVENT_AP_STACONNECTED:
-        ESP_LOGI(TAG, "station "MACSTR" join, AID=%d",
+        dbgprintf( "station "MACSTR" join, AID=%d",
                  MAC2STR(wifi_event->mac), wifi_event->aid);
 		break;
 	  case	WIFI_EVENT_AP_STADISCONNECTED:
-        ESP_LOGI(TAG, "station "MACSTR" leave, AID=%d",
+        dbgprintf( "station "MACSTR" leave, AID=%d",
                  MAC2STR(wifi_event->mac), wifi_event->aid);
 		break;
 	  default:
@@ -118,7 +118,7 @@ wifi_ap_start(
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "wifi_init_softap finished. SSID:%s password:%s",
+    dbgprintf( "wifi_init_softap finished. SSID:%s password:%s",
              my_ssid, my_pass);
 	wifi_started = TRUE;
 }
@@ -146,17 +146,17 @@ wifi_scan_get(
 	q = p;
 	ESP_ERROR_CHECK( esp_wifi_scan_start(&scan_config, true) );
 	ESP_ERROR_CHECK( esp_wifi_scan_get_ap_num(&num) );
-	ESP_LOGI(TAG, "AP number = %d", (int)num);
+	dbgprintf( "AP number = %d", (int)num);
 	gnum = NUM_APS;
 	ESP_ERROR_CHECK( esp_wifi_scan_get_ap_records(&gnum, aps) );
-	ESP_LOGI(TAG, "AP get = %d", (int)gnum);
+	dbgprintf( "AP get = %d", (int)gnum);
 	*p ++ = '[';
 	for	( int i = 0 ; i < gnum; i ++ )	{
 		if ( i > 0 )	{
 			*p ++ = ',';
 		}
 		p += sprintf(p, "{\"ssid\": \"%s\", \"rssi\": %d}", aps[i].ssid, (int)aps[i].rssi);
-		ESP_LOGI(TAG, "SSID: %s rssi %d", aps[i].ssid, (int)aps[i].rssi);
+		dbgprintf( "SSID: %s rssi %d", aps[i].ssid, (int)aps[i].rssi);
 	}
 	*p ++ = ']';
 	*p = 0;
@@ -175,8 +175,8 @@ wifi_connect(
     ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
 
     ESP_ERROR_CHECK(esp_wifi_start() );
-    ESP_LOGI(TAG, "wifi_init_sta finished.");
-    ESP_LOGI(TAG, "connect to ap SSID:%s password:%s", ssid, password);
+    dbgmsg("wifi_init_sta finished.");
+    dbgprintf("connect to ap SSID:%s password:%s", ssid, password);
     ESP_ERROR_CHECK(esp_wifi_connect() );
 
 }

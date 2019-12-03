@@ -11,7 +11,7 @@ extern	int		str2int(char *str, size_t len);
 #define	memclear(buff,size)		memset((buff),0,(size))
 #define	ERROR_CHECK(check)		if ((err = check) != ESP_OK) goto err_exit;
 #define	ERROR(msg)		{		\
- ESP_LOGI(TAG, "%s", (msg));	\
+ dbgprintf("%s", (msg));		\
  goto error;					\
 }
 

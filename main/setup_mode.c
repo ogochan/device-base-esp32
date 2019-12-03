@@ -35,7 +35,7 @@ _wifi_scan(
 {
 	wifi_scan_start();
 	wifi_scan_get(buff);
-	ESP_LOGI(TAG, "%s", buff);
+	dbgprintf("%s", buff);
 }
 
 static	esp_err_t
@@ -65,7 +65,7 @@ _wifi_config(
 	cJSON	*root
 		,	*node;
 	
-	ESP_LOGI(TAG, "config: %s", body);
+	dbgprintf("config: %s", body);
 	root = cJSON_Parse(body);
 	if ( root != NULL )	{
 		node = cJSON_GetObjectItemCaseSensitive(root, "ssid");
@@ -82,12 +82,12 @@ _wifi_config(
 			strcpy(ap_pass, "** none **");
 			ERROR("not string pass");
 		}
-		ESP_LOGI(TAG, "ssid: %s", ap_ssid);
-		ESP_LOGI(TAG, "pass: %s", ap_pass);
+		dbgprintf("ssid: %s", ap_ssid);
+		dbgprintf("pass: %s", ap_pass);
 	} else {
 		const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL) {
-            ESP_LOGI(TAG, "Error before: %s\n", error_ptr);
+            dbgprintf("Error before: %s\n", error_ptr);
         }
 	}
 	cJSON_Delete(root);
@@ -102,7 +102,6 @@ http_wifi_config(
 
 	ret = httpd_req_recv(req, ResponseMessage, req->content_len);
 	ResponseMessage[req->content_len] = 0;
-	//ESP_LOGI(TAG, "%s", ResponseMessage);
 	_wifi_config(ResponseMessage);
 
     httpd_resp_send(req, "OK", 3);
@@ -125,7 +124,7 @@ _led_update(
 		,	white
 		,	no;
 	
-	ESP_LOGI(TAG, "config: %s", body);
+	dbgprintf("config: %s", body);
 	root = cJSON_Parse(body);
 	if ( root != NULL )	{
 		_red = cJSON_GetObjectItemCaseSensitive(root, "red");
@@ -174,11 +173,11 @@ _led_update(
 			no = -1;
 		}
 
-		ESP_LOGI(TAG, "red: %d", red);
-		ESP_LOGI(TAG, "green: %d", green);
-		ESP_LOGI(TAG, "blue: %d", blue);
-		ESP_LOGI(TAG, "white: %d", white);
-		ESP_LOGI(TAG, "no: %d", no);
+		dbgprintf("red: %d", red);
+		dbgprintf("green: %d", green);
+		dbgprintf("blue: %d", blue);
+		dbgprintf("white: %d", white);
+		dbgprintf("no: %d", no);
 		if	( no < 0 )	{
 			light_set_all_color(red, green, blue, white);
 		} else {
@@ -187,7 +186,7 @@ _led_update(
 	} else {
 		const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL) {
-            ESP_LOGI(TAG, "Error before: %s\n", error_ptr);
+            dbgprintf("Error before: %s\n", error_ptr);
         }
 	}
 	cJSON_Delete(root);
@@ -216,7 +215,7 @@ _fan_update(
 		,	*_switch;
 	Bool	on;
 	
-	ESP_LOGI(TAG, "config: %s", body);
+	dbgprintf("config: %s", body);
 	root = cJSON_Parse(body);
 	on = FALSE;
 	if ( root != NULL )	{
@@ -231,11 +230,11 @@ _fan_update(
 				fan_switch(on);
 			}
 		}
-		ESP_LOGI(TAG, "fan: %s", on ? "on": "off");
+		dbgprintf("fan: %s", on ? "on": "off");
 	} else {
 		const char *error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL) {
-            ESP_LOGI(TAG, "Error before: %s\n", error_ptr);
+            dbgprintf("Error before: %s\n", error_ptr);
         }
 	}
 	cJSON_Delete(root);
@@ -268,7 +267,7 @@ _device_new(
 	esp_http_client_handle_t	client;
 	Bool	rc;
 
-	ESP_LOGI(TAG, "config: %s", body);
+	dbgprintf("config: %s", body);
 	ret = FALSE;
 	*user = 0;
 	*pass = 0;
@@ -365,17 +364,17 @@ initialize_setup_mode(void)
     config.max_open_sockets = 2;
 
     if (httpd_start(&hd, &config) == ESP_OK) {
-        ESP_LOGI(TAG, "Started HTTP server on port: '%d'", config.server_port);
-        ESP_LOGI(TAG, "Max URI handlers: '%d'", config.max_uri_handlers);
-        ESP_LOGI(TAG, "Max Open Sessions: '%d'", config.max_open_sockets);
-        ESP_LOGI(TAG, "Max Header Length: '%d'", HTTPD_MAX_REQ_HDR_LEN);
-        ESP_LOGI(TAG, "Max URI Length: '%d'", HTTPD_MAX_URI_LEN);
-        ESP_LOGI(TAG, "Max Stack Size: '%d'", config.stack_size);
+        dbgprintf("Started HTTP server on port: '%d'", config.server_port);
+        dbgprintf("Max URI handlers: '%d'", config.max_uri_handlers);
+        dbgprintf("Max Open Sessions: '%d'", config.max_open_sockets);
+        dbgprintf("Max Header Length: '%d'", HTTPD_MAX_REQ_HDR_LEN);
+        dbgprintf("Max URI Length: '%d'", HTTPD_MAX_URI_LEN);
+        dbgprintf("Max Stack Size: '%d'", config.stack_size);
 
 		for (i = 0; i < sizeof(handlers)/sizeof(httpd_uri_t); i++) {
-			ESP_LOGI(TAG, "path %s", handlers[i].uri);
+			dbgprintf("path %s", handlers[i].uri);
 			if	( httpd_register_uri_handler(hd, &handlers[i]) != ESP_OK )	{
-				ESP_LOGW(TAG, "register uri failed for %d", i);
+				dbgprintf("register uri failed for %d", i);
 				return;
 			}
 		}
@@ -396,10 +395,10 @@ load_device_info(void)
 	get_ap_pass(ap_pass);
 
 	close_device_info();
-	ESP_LOGI(TAG, "ap ssid    : %s", ap_ssid);
-	ESP_LOGI(TAG, "ap pass    : %s", ap_pass);
-	ESP_LOGI(TAG, "device uuid: %s", my_device_id);
-	ESP_LOGI(TAG, "session key: %s", my_session_key);
+	dbgprintf("ap ssid    : %s", ap_ssid);
+	dbgprintf("ap pass    : %s", ap_pass);
+	dbgprintf("device uuid: %s", my_device_id);
+	dbgprintf("session key: %s", my_session_key);
 }
 
 extern	void

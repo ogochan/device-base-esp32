@@ -63,18 +63,18 @@ typedef struct {
 
 static esp_err_t _spp_queue_packet(uint8_t *data, size_t len){
     if(!data || !len){
-        ESP_LOGI(TAG, "No data provided");
+        dbgmsg("No data provided");
         return ESP_OK;
     }
     spp_packet_t * packet = (spp_packet_t*)malloc(sizeof(spp_packet_t) + len);
     if(!packet){
-        ESP_LOGI(TAG, "SPP TX Packet Malloc Failed!");
+        dbgmsg("SPP TX Packet Malloc Failed!");
         return ESP_FAIL;
     }
     packet->len = len;
     memcpy(packet->data, data, len);
     if (xQueueSend(_spp_tx_queue, &packet, portMAX_DELAY) != pdPASS) {
-        ESP_LOGI(TAG, "SPP TX Queue Send Failed!");
+        dbgmsg("SPP TX Queue Send Failed!");
         free(packet);
         return ESP_FAIL;
     }
@@ -98,14 +98,14 @@ btStart(void){
     }
     if(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED){
         if (esp_bt_controller_enable(ESP_BT_MODE_CLASSIC_BT)) {
-            ESP_LOGI(TAG, "BT Enable failed");
+            dbgmsg("BT Enable failed");
             return false;
         }
     }
     if(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED){
         return true;
     }
-    ESP_LOGI(TAG, "BT Start failed");
+    dbgmsg("BT Start failed");
     return false;
 }
 
@@ -116,7 +116,7 @@ btStop(void){
     }
     if(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED){
         if (esp_bt_controller_disable()) {
-            ESP_LOGI(TAG, "BT Disable failed");
+            dbgmsg("BT Disable failed");
             return false;
         }
         while(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_ENABLED);
@@ -124,7 +124,7 @@ btStop(void){
     if(esp_bt_controller_get_status() == ESP_BT_CONTROLLER_STATUS_INITED){
         return true;
     }
-    ESP_LOGI(TAG, "BT Stop failed");
+    dbgmsg("BT Stop failed");
     return false;
 }
 
@@ -133,12 +133,12 @@ _spp_send_buffer(){
     if((xEventGroupWaitBits(_spp_event_group, SPP_CONGESTED, pdFALSE, pdTRUE, portMAX_DELAY) & SPP_CONGESTED)){
         esp_err_t err = esp_spp_write(_spp_client, _spp_tx_buffer_len, _spp_tx_buffer);
         if(err != ESP_OK){
-            ESP_LOGI(TAG, "SPP Write Failed! [0x%X]", err);
+            dbgprintf("SPP Write Failed! [0x%X]", err);
             return false;
         }
         _spp_tx_buffer_len = 0;
         if(xSemaphoreTake(_spp_tx_done, portMAX_DELAY) != pdTRUE){
-            ESP_LOGI(TAG, "SPP Ack Failed!");
+            dbgmsg("SPP Ack Failed!");
             return false;
         }
         return true;
@@ -188,7 +188,7 @@ _spp_tx_task(void * arg){
                 }
             }
         } else {
-            ESP_LOGI(TAG, "Something went horribly wrong");
+            dbgmsg("Something went horribly wrong");
         }
     }
     vTaskDelete(NULL);
@@ -202,7 +202,7 @@ esp_spp_cb(
 {
     switch (event)	{
 	  case ESP_SPP_INIT_EVT:
-		ESP_LOGI(TAG, "ESP_SPP_INIT_EVT");
+		dbgmsg("ESP_SPP_INIT_EVT");
         esp_bt_gap_set_scan_mode(ESP_BT_CONNECTABLE, ESP_BT_GENERAL_DISCOVERABLE);
         esp_spp_start_srv(ESP_SPP_SEC_NONE, ESP_SPP_ROLE_SLAVE, 0, _spp_server_name);
         xEventGroupSetBits(_spp_event_group, SPP_RUNNING);
@@ -216,7 +216,7 @@ esp_spp_cb(
             esp_spp_disconnect(param->open.handle);
         }
         xEventGroupSetBits(_spp_event_group, SPP_CONNECTED);
-        ESP_LOGI(TAG, "ESP_SPP_SRV_OPEN_EVT");
+        dbgmsg("ESP_SPP_SRV_OPEN_EVT");
         break;
 
 	  case ESP_SPP_CLOSE_EVT://Client connection closed
@@ -226,7 +226,7 @@ esp_spp_cb(
             _spp_client = 0;
         }
         xEventGroupClearBits(_spp_event_group, SPP_CONNECTED);
-        ESP_LOGI(TAG, "ESP_SPP_CLOSE_EVT");
+        dbgmsg("ESP_SPP_CLOSE_EVT");
         break;
 
 	  case ESP_SPP_CONG_EVT://connection congestion status changed
@@ -235,7 +235,7 @@ esp_spp_cb(
         } else {
             xEventGroupSetBits(_spp_event_group, SPP_CONGESTED);
         }
-        ESP_LOGI(TAG, "ESP_SPP_CONG_EVT: %s", param->cong.cong?"CONGESTED":"FREE");
+        dbgprintf("ESP_SPP_CONG_EVT: %s", param->cong.cong?"CONGESTED":"FREE");
         break;
 
 	  case ESP_SPP_WRITE_EVT://write operation completed
@@ -243,18 +243,18 @@ esp_spp_cb(
             xEventGroupClearBits(_spp_event_group, SPP_CONGESTED);
         }
         xSemaphoreGive(_spp_tx_done);//we can try to send another packet
-        ESP_LOGI(TAG, "ESP_SPP_WRITE_EVT: %u %s", param->write.len, param->write.cong?"CONGESTED":"FREE");
+        dbgprintf("ESP_SPP_WRITE_EVT: %u %s", param->write.len, param->write.cong?"CONGESTED":"FREE");
         break;
 
 	  case ESP_SPP_DATA_IND_EVT://connection received data
-        ESP_LOGI(TAG, "ESP_SPP_DATA_IND_EVT len=%d handle=%d", param->data_ind.len, param->data_ind.handle);
+        dbgprintf("ESP_SPP_DATA_IND_EVT len=%d handle=%d", param->data_ind.len, param->data_ind.handle);
         //esp_log_buffer_hex("",param->data_ind.data,param->data_ind.len); //for low level debug
         //ets_printf("r:%u\n", param->data_ind.len);
 
         if (_spp_rx_queue != NULL){
             for (int i = 0; i < param->data_ind.len; i++){
                 if(xQueueSend(_spp_rx_queue, param->data_ind.data + i, (TickType_t)0) != pdTRUE){
-                    ESP_LOGI(TAG, "RX Full! Discarding %u bytes", param->data_ind.len - i);
+                    dbgprintf("RX Full! Discarding %u bytes", param->data_ind.len - i);
                     break;
                 }
             }
@@ -263,16 +263,16 @@ esp_spp_cb(
 
         //should maybe delete those.
 	  case ESP_SPP_DISCOVERY_COMP_EVT://discovery complete
-        ESP_LOGI(TAG, "ESP_SPP_DISCOVERY_COMP_EVT");
+        dbgmsg("ESP_SPP_DISCOVERY_COMP_EVT");
         break;
 	  case ESP_SPP_OPEN_EVT://Client connection open
-        ESP_LOGI(TAG, "ESP_SPP_OPEN_EVT");
+        dbgmsg("ESP_SPP_OPEN_EVT");
         break;
 	  case ESP_SPP_START_EVT://server started
-        ESP_LOGI(TAG, "ESP_SPP_START_EVT");
+        dbgmsg("ESP_SPP_START_EVT");
         break;
 	  case ESP_SPP_CL_INIT_EVT://client initiated a connection
-        ESP_LOGI(TAG, "ESP_SPP_CL_INIT_EVT");
+        dbgmsg("ESP_SPP_CL_INIT_EVT");
         break;
 	  default:
         break;
@@ -352,7 +352,7 @@ initialize_bt(const char *deviceName)
     if(!_spp_event_group){
         _spp_event_group = xEventGroupCreate();
         if(!_spp_event_group){
-            ESP_LOGI(TAG, "SPP Event Group Create Failed!");
+            dbgmsg("SPP Event Group Create Failed!");
             return false;
         }
         xEventGroupClearBits(_spp_event_group, 0xFFFFFF);
@@ -361,21 +361,21 @@ initialize_bt(const char *deviceName)
     if (_spp_rx_queue == NULL){
         _spp_rx_queue = xQueueCreate(RX_QUEUE_SIZE, sizeof(uint8_t)); //initialize the queue
         if (_spp_rx_queue == NULL){
-            ESP_LOGI(TAG, "RX Queue Create Failed");
+            dbgmsg("RX Queue Create Failed");
             return false;
         }
     }
     if (_spp_tx_queue == NULL){
         _spp_tx_queue = xQueueCreate(TX_QUEUE_SIZE, sizeof(spp_packet_t*)); //initialize the queue
         if (_spp_tx_queue == NULL){
-            ESP_LOGI(TAG, "TX Queue Create Failed");
+            dbgmsg("TX Queue Create Failed");
             return false;
         }
     }
     if(_spp_tx_done == NULL){
         _spp_tx_done = xSemaphoreCreateBinary();
         if (_spp_tx_done == NULL){
-            ESP_LOGI(TAG, "TX Semaphore Create Failed");
+            dbgmsg("TX Semaphore Create Failed");
             return false;
         }
         xSemaphoreTake(_spp_tx_done, 0);
@@ -384,38 +384,38 @@ initialize_bt(const char *deviceName)
     if(!_spp_task_handle){
         xTaskCreate(_spp_tx_task, "spp_tx", 4096, NULL, 2, &_spp_task_handle);
         if(!_spp_task_handle){
-            ESP_LOGI(TAG, "Network Event Task Start Failed!");
+            dbgmsg("Network Event Task Start Failed!");
             return false;
         }
     }
 
     if (!btStarted() && !btStart()){
-        ESP_LOGI(TAG, "initialize controller failed");
+        dbgmsg("initialize controller failed");
         return false;
     }
 
     esp_bluedroid_status_t bt_state = esp_bluedroid_get_status();
     if (bt_state == ESP_BLUEDROID_STATUS_UNINITIALIZED){
         if (esp_bluedroid_init()) {
-            ESP_LOGI(TAG, "initialize bluedroid failed");
+            dbgmsg("initialize bluedroid failed");
             return false;
         }
     }
     
     if (bt_state != ESP_BLUEDROID_STATUS_ENABLED){
         if (esp_bluedroid_enable()) {
-            ESP_LOGI(TAG, "enable bluedroid failed");
+            dbgmsg("enable bluedroid failed");
             return false;
         }
     }
 
     if (esp_spp_register_callback(esp_spp_cb) != ESP_OK){
-        ESP_LOGI(TAG, "spp register failed");
+        dbgmsg("spp register failed");
         return false;
     }
 
     if (esp_spp_init(ESP_SPP_MODE_CB) != ESP_OK){
-        ESP_LOGI(TAG, "spp init failed");
+        dbgmsg("spp init failed");
         return false;
     }
 
@@ -427,7 +427,7 @@ initialize_bt(const char *deviceName)
     cod.minor = 0b000100;
     cod.service = 0b00000010110;
     if (esp_bt_gap_set_cod(cod, ESP_BT_INIT_COD) != ESP_OK) {
-        ESP_LOGI(TAG, "set cod failed");
+        dbgmsg("set cod failed");
         return false;
     }
 
@@ -523,7 +523,7 @@ ENTER_FUNC;
 	while(1){
 		len = bt_recv_str(command_buffer, '\n',COMMAND_BUFFER_SIZE);
 		command_buffer[len] = 0;
-		ESP_LOGI(TAG, "recv(%d) [%s]", (int)len, command_buffer);
+		dbgprintf("recv(%d) [%s]", (int)len, command_buffer);
 		if ( !strlcmp(command_buffer, "GET ") )	{
 			method = BT_GET;
 			p = &command_buffer[4];
@@ -538,7 +538,7 @@ ENTER_FUNC;
 				len = bt_recv_str(p, '\n', BODY_BUFFER_SIZE);
 				p += len + 1;
 			}	while	( len > 0 );
-			ESP_LOGI(TAG, "body [%s]", body_buffer);
+			dbgprintf("body [%s]", body_buffer);
 		} else {
 			method = 0;
 			path = NULL;
@@ -553,7 +553,7 @@ ENTER_FUNC;
 		}
 		//bt_send_string("Loop!\n");
 		//vTaskDelay(10000 / portTICK_RATE_MS);
-		ESP_LOGI(TAG, "Loop!");
+		dbgmsg("Loop!");
 	}
 }
 

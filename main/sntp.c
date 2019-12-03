@@ -61,7 +61,7 @@ sync_time(void)
 		}
 		time(&after);
 		localtime_r(&after, &timeinfo);
-		ESP_LOGI(TAG, "after time %s", asctime_r(&timeinfo, buf));
+		dbgprintf("after time %s", asctime_r(&timeinfo, buf));
 		sntp_stop();
 		if	( retry < RETRY_COUNT )	{
 			if	( (int)after == (int)before + SYNC_SLEEP * retry )	{
@@ -74,7 +74,7 @@ sync_time(void)
 				}
 			}
 		}
-		ESP_LOGI(TAG, "NTP sleep %d seconds", sleep_second);
+		dbgprintf("NTP sleep %d seconds", sleep_second);
 		msleep(sleep_second * 1000);
 	}
 }
@@ -88,7 +88,7 @@ sntp_valid(void)
 extern	void
 initialize_sntp(void)
 {
-    ESP_LOGI(TAG, "Initializing SNTP");
+    dbgmsg("Initializing SNTP");
 
 	time_valid = FALSE;
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
