@@ -16,10 +16,7 @@
 #include	"time.h"
 #include	"sys/time.h"
 #include	"cJSON.h"
-#include	"bt.h"
 #include	"wifi.h"
-#include	"light.h"
-#include	"fan.h"
 #include	"httpc.h"
 #include	"sntp.h"
 #include	"api_client.h"
@@ -36,16 +33,6 @@ _wifi_scan(
 	wifi_scan_start();
 	wifi_scan_get(buff);
 	dbgprintf("%s", buff);
-}
-
-static	esp_err_t
-bt_wifi_scan(void)
-{
-	_wifi_scan(ResponseMessage);
-	bt_send_string(ResponseMessage);
-	bt_send_string("\n\n");
-
-    return ESP_OK;
 }
 
 static	esp_err_t
@@ -98,158 +85,9 @@ static	esp_err_t
 http_wifi_config(
 	httpd_req_t	*req)
 {
-	int		ret;
-
-	ret = httpd_req_recv(req, ResponseMessage, req->content_len);
+	httpd_req_recv(req, ResponseMessage, req->content_len);
 	ResponseMessage[req->content_len] = 0;
 	_wifi_config(ResponseMessage);
-
-    httpd_resp_send(req, "OK", 3);
-    return ESP_OK;
-}
-
-static	void
-_led_update(
-	char	*body)
-{
-	cJSON	*root
-		,	*_red
-		,	*_green
-		,	*_blue
-		,	*_white
-		,	*_no;
-	int		red
-		,	green
-		,	blue
-		,	white
-		,	no;
-	
-	dbgprintf("config: %s", body);
-	root = cJSON_Parse(body);
-	if ( root != NULL )	{
-		_red = cJSON_GetObjectItemCaseSensitive(root, "red");
-		if ( cJSON_IsString(_red) )	{
-			red = atoi(_red->valuestring);
-		} else
-		if	( cJSON_IsNumber(_red) )	{
-			red = _red->valueint;
-		} else {
-			red = 0;
-		}
-		_green = cJSON_GetObjectItemCaseSensitive(root, "green");
-		if	( cJSON_IsString(_green) )	{
-			green = atoi(_green->valuestring);
-		} else
-		if	( cJSON_IsNumber(_green) )	{
-			green = _green->valueint;
-		} else {
-			green = 0;
-		}
-		_blue = cJSON_GetObjectItemCaseSensitive(root, "blue");
-		if	( cJSON_IsString(_blue) )	{
-			blue = atoi(_blue->valuestring);
-		} else
-		if	( cJSON_IsNumber(_blue) )	{
-			blue = _blue->valueint;
-		} else {
-			blue = 0;
-		}
-		_white = cJSON_GetObjectItemCaseSensitive(root, "white");
-		if	( cJSON_IsString(_white) )	{
-			white = atoi(_white->valuestring);
-		} else
-		if	( cJSON_IsNumber(_white) )	{
-			white = _white->valueint;
-		} else {
-			white = 0;
-		}
-		_no = cJSON_GetObjectItemCaseSensitive(root, "no");
-		if	( cJSON_IsString(_no) )	{
-			no = atoi(_no->valuestring);
-		} else
-		if	( cJSON_IsNumber(_no) )	{
-			no = _no->valueint;
-		} else {
-			no = -1;
-		}
-
-		dbgprintf("red: %d", red);
-		dbgprintf("green: %d", green);
-		dbgprintf("blue: %d", blue);
-		dbgprintf("white: %d", white);
-		dbgprintf("no: %d", no);
-		if	( no < 0 )	{
-			light_set_all_color(red, green, blue, white);
-		} else {
-			light_set_color(no, red, green, blue, white);
-		}
-	} else {
-		const char *error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL) {
-            dbgprintf("Error before: %s\n", error_ptr);
-        }
-	}
-	cJSON_Delete(root);
-}
-
-static	esp_err_t
-http_led_update(
-	httpd_req_t	*req)
-{
-	int		ret;
-
-	ret = httpd_req_recv(req, ResponseMessage, req->content_len);
-	ResponseMessage[req->content_len] = 0;
-
-	_led_update(ResponseMessage);
-
-    httpd_resp_send(req, "OK", 3);
-    return ESP_OK;
-}
-
-static	void
-_fan_update(
-	char	*body)
-{
-	cJSON	*root
-		,	*_switch;
-	Bool	on;
-	
-	dbgprintf("config: %s", body);
-	root = cJSON_Parse(body);
-	on = FALSE;
-	if ( root != NULL )	{
-		_switch = cJSON_GetObjectItemCaseSensitive(root, "switch");
-		if ( cJSON_IsBool(_switch) )	{
-			if	( cJSON_IsTrue(_switch) )	{
-				on = TRUE;
-				fan_switch(on);
-			} else
-			if	( cJSON_IsFalse(_switch) )	{
-				on = FALSE;
-				fan_switch(on);
-			}
-		}
-		dbgprintf("fan: %s", on ? "on": "off");
-	} else {
-		const char *error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL) {
-            dbgprintf("Error before: %s\n", error_ptr);
-        }
-	}
-	cJSON_Delete(root);
-}
-
-static	esp_err_t
-http_fan_update(
-	httpd_req_t	*req)
-{
-	int		ret;
-
-	ret = httpd_req_recv(req, ResponseMessage, req->content_len);
-	ResponseMessage[req->content_len] = 0;
-
-	_fan_update(ResponseMessage);
 
     httpd_resp_send(req, "OK", 3);
     return ESP_OK;
@@ -312,9 +150,7 @@ static	esp_err_t
 http_device_new(
 	httpd_req_t	*req)
 {
-	int		ret;
-
-	ret = httpd_req_recv(req, ResponseMessage, req->content_len);
+	httpd_req_recv(req, ResponseMessage, req->content_len);
 	ResponseMessage[req->content_len] = 0;
 	if	( _device_new(ResponseMessage) )	{
 		httpd_resp_send(req, "OK", 3);
@@ -334,16 +170,6 @@ static	const	httpd_uri_t	handlers[] = {
     { .uri      = "/wifi/config",
       .method   = HTTP_POST,
       .handler  = http_wifi_config,
-      .user_ctx = NULL,
-    },
-    { .uri      = "/led/update",
-      .method   = HTTP_POST,
-      .handler  = http_led_update,
-      .user_ctx = NULL,
-    },
-    { .uri      = "/fan/update",
-      .method   = HTTP_POST,
-      .handler  = http_fan_update,
       .user_ctx = NULL,
     },
     { .uri      = "/device",
@@ -413,6 +239,9 @@ destroy_device_info(void)
 	memclear(ap_ssid, SIZE_SSID + 1);
 	memclear(ap_pass, SIZE_PASS + 1);
 
+	strcpy(my_ssid, DEFAULT_SSID);
+	strcpy(my_pass, DEFAULT_PASS);
+
 	set_my_ssid(my_ssid);
 	set_my_pass(my_pass);
 	set_device_id(my_device_id);
@@ -427,6 +256,7 @@ extern	void
 SetupMode(void)
 {
 ENTER_FUNC;
+	wifi_ap_start(my_ssid, my_pass);
 	initialize_setup_mode();
 LEAVE_FUNC;
 }

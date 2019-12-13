@@ -1,4 +1,4 @@
-#define	TRACE
+//#define	TRACE
 
 #include 	"config.h"
 #include 	<stdio.h>

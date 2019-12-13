@@ -88,7 +88,8 @@ get_my_ssid(
 	size_t		size;
 	memclear(ssid, SIZE_SSID + 1);
 	err = nvs_get_str(device_info_handle, "my_ssid", ssid, &size);
-	if	( err != ESP_OK )	{
+	if		(	( err != ESP_OK )
+			||	( *ssid == 0 ) )	{
 		strcpy(ssid, DEFAULT_SSID);
 	}
 }
@@ -110,7 +111,8 @@ get_my_pass(
 	size_t		size;
 	memclear(pass, SIZE_PASS + 1);
 	err = nvs_get_str(device_info_handle, "my_pass", pass, &size);
-	if	( err != ESP_OK )	{
+	if		(	( err != ESP_OK )
+			||	(  *pass == 0 ) )	{
 		strcpy(pass, DEFAULT_PASS);
 	}
 }

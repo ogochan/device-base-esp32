@@ -14,9 +14,18 @@
 #define	NR_RGBW_LED				0
 #define	NR_NEOPIXEL_LED			25
 #define	NR_LED					(NR_RGBW_LED + NR_NEOPIXEL_LED)
+#define	NR_SENSORS				10
 
 #define	MAX_TIMER_EVENTS		100
 
 #define	DEFAULT_SENSE_INTERVAL	3600
 
+#define	N_TIMER_EVENTS			10
+
 #define	USE_LOCALCA
+
+#define	HAVE_SENSORS
+
+#ifdef	HAVE_SENSORS
+#define	HAVE_FAN
+#endif

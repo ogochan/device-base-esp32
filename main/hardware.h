@@ -24,7 +24,7 @@
 
 // NeoPixel configure
 #define	NEOPIXEL_SK6812
-#define	NEOPIXEL_RMT_CHANNEL		RMT_CHANNEL_1
+#define	NEOPIXEL_RMT_CHANNEL	RMT_CHANNEL_1
 
 //	I2C configure
 #define	I2C_FREQUENCY			100*1000

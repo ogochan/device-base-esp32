@@ -163,7 +163,7 @@ wifi_scan_get(
 	ESP_ERROR_CHECK( esp_wifi_scan_stop() );
 }
 
-extern	void
+extern	Bool
 wifi_connect(
 	char	*ssid,
 	char	*password)
@@ -177,8 +177,7 @@ wifi_connect(
     ESP_ERROR_CHECK(esp_wifi_start() );
     dbgmsg("wifi_init_sta finished.");
     dbgprintf("connect to ap SSID:%s password:%s", ssid, password);
-    ESP_ERROR_CHECK(esp_wifi_connect() );
-
+    return	( esp_wifi_connect() == ESP_OK ) ? TRUE : FALSE;
 }
 
 extern	Bool

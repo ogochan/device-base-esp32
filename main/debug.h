@@ -25,7 +25,7 @@
 #ifndef	__INC_DEBUG_H
 #define	__INC_DEBUG_H
 
-#include	<stdio.h>
+#include	<esp_log.h>
 
 #ifdef	DEBUG
 #define	STOP				while(true) {}
@@ -36,48 +36,15 @@
 #endif
 
 #ifdef	TRACE
-#define	DEBUG_PRINTS(s)		printf("%s", (s))
-#define	DEBUG_PRINTI(s)		printf("%d", (s))
-#define	DEBUG_PRINTLN(s)	printf("%s\n", (s))
+#define	ENTER_FUNC			ESP_LOGI("", "%s:%d:>%s", __FILE__, __LINE__, __func__);
+#define	LEAVE_FUNC			ESP_LOGI("", "%s:%d:<%s", __FILE__, __LINE__, __func__);
+#define	dbgmsg(s)			ESP_LOGI("", "%s:%d:%s", __FILE__, __LINE__, (s))
+#define	dbgprintf(fmt,...)	ESP_LOGI("", "%s:%d:" fmt, __FILE__, __LINE__, __VA_ARGS__)
 #else
-#define	DEBUG_PRINTS(...)
-#define	DEBUG_PRINTI(...)
-#define	DEBUG_PRINTLN(...)
+#define	ENTER_FUNC
+#define	LEAVE_FUNC
+#define	dbgmsg(s)
+#define	dbgprintf(fmt,...)
 #endif
-
-#define	dbgmsg(s)			\
-do {						\
-	DEBUG_PRINTS("M:");		\
-	DEBUG_PRINTS(__FILE__);	\
-	DEBUG_PRINTS(":");		\
-	DEBUG_PRINTI(__LINE__);	\
-	DEBUG_PRINTS(":");		\
-	DEBUG_PRINTLN(s);		\
-}	while(0)
-
-#define	ENTER_FUNC			\
-do {						\
-	DEBUG_PRINTS("M:");		\
-	DEBUG_PRINTS(__FILE__);	\
-	DEBUG_PRINTS(":");		\
-	DEBUG_PRINTI(__LINE__);	\
-	DEBUG_PRINTS(":>");		\
-	DEBUG_PRINTLN(__func__);	\
-}	while(0)
-#define	LEAVE_FUNC			\
-do {						\
-	DEBUG_PRINTS("M:");		\
-	DEBUG_PRINTS(__FILE__);	\
-	DEBUG_PRINTS(":");		\
-	DEBUG_PRINTI(__LINE__);	\
-	DEBUG_PRINTS(":<");		\
-	DEBUG_PRINTLN(__func__);	\
-}	while(0)
-#define	dbgprintf(fmt,...)	\
-{							\
-	char	_buff[80];		\
-	sprintf(_buff, fmt,  __VA_ARGS__);			\
-	dbgmsg(_buff);			\
-}	while(0);
 
 #endif

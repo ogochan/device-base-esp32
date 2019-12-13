@@ -45,7 +45,7 @@ _http_event_handle(
 		break;
 	  case HTTP_EVENT_ON_HEADER:
 		dbgmsg( "HTTP_EVENT_ON_HEADER");
-		dbgprintf("%.*s", evt->data_len, (char*)evt->data);
+		//dbgprintf("%.*s", evt->data_len, (char*)evt->data);
 		break;
 	  case HTTP_EVENT_ON_DATA:
 #if	0

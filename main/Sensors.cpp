@@ -14,7 +14,7 @@ extern "C" {
 #define	TAG	"Sensors"
 
 uint8_t		Sensors::nSensors;
-SensorInfo	*Sensors::_Sensors[NUMBER_OF_SENSORS];
+SensorInfo	*Sensors::_Sensors[NR_SENSORS];
 
 void
 Sensors::init(void)
@@ -56,6 +56,24 @@ LEAVE_FUNC;
 void
 Sensors::collect(
 	time_t	n,
+	SenseBuffer	*buff,
+	SensorInfo	*info)
+{
+ENTER_FUNC;
+	buff->check_space();
+	buff->put(&n, sizeof(time_t));
+	if	( info != NULL )	{
+		dbgprintf("info->id = %d", (int)info->id);
+		buff->set_value(info->id);
+		info->get(buff);
+	}
+	buff->set_value(0xFF);
+LEAVE_FUNC;
+}
+
+void
+Sensors::collect(
+	time_t	n,
 	SenseBuffer	*buff)
 {
 	SensorInfo	*info;
@@ -66,9 +84,9 @@ ENTER_FUNC;
 	buff->put(&n, sizeof(time_t));
 	for( i = 0; i< Sensors::count(); i++ ){
 		info = Sensors::item(i);
-		//dbgprintf("%s is %s", info->name(), info->fValid ? "valid" : "invalid");
+		dbgprintf("info(%d)->id = %d", i, (int)info->id);
 		if	( info->fValid )	{
-			buff->set_value(i);
+			buff->set_value(info->id);
 			info->get(buff);
 		}
 	}

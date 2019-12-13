@@ -14,9 +14,10 @@ extern "C"{
 #include 	"BME280_Temp.h"
 #include	"Sensors.h"
 #include	"I2C.h"
+#include	"SensorInfo.h"
+#include	"sensor.h"
 extern "C"{
 #include	"types.h"
-#include	"sensor.h"
 #include	"httpc.h"
 #include	"globals.h"
 #include	"misc.h"
@@ -88,25 +89,25 @@ ENTER_FUNC;
 	rc = FALSE;
 	sense_buff->rewind_read();
 	ESP_LOGI(TAG, "buff %d bytes use", sense_buff->used_size());
-	while	(  !sense_buff->is_end() )	{
-		pp = sense_buff->mark_read();
-		sense_buff->get(&n, sizeof(time_t));
-		size = 0;
-		size ++;	//	[
-		while	( sense_buff->current_value() != 0xFF )	{
-			message_pointer = Message;
-			info = Sensors::item(sense_buff->get_value());
-			make_one_sensor_message(n, info, sense_buff);
-			size += strlen(Message);
-			if	( sense_buff->current_value() != 0xFF )	{
-				size ++;	//	,
+	client = initialize_httpc();
+	if	( client != NULL )	{
+		while	(  !sense_buff->is_end() )	{
+			pp = sense_buff->mark_read();
+			sense_buff->get(&n, sizeof(time_t));
+			size = 0;
+			size ++;	//	[
+			while	( sense_buff->current_value() != 0xFF )	{
+				message_pointer = Message;
+				info = Sensors::item(sense_buff->get_value());
+				make_one_sensor_message(n, info, sense_buff);
+				size += strlen(Message);
+				if	( sense_buff->current_value() != 0xFF )	{
+					size ++;	//	,
+				}
 			}
-		}
-		size ++;	//	]
+			size ++;	//	]
 
-		sense_buff->rewind_read(pp);
-		client = initialize_httpc();
-		if	( client != NULL )	{
+			sense_buff->rewind_read(pp);
 			httpc_set_header(client, "X-SESSION-KEY", session_key);
 			httpc_set_header(client, "Content-Type", "application/json");
 			ret = httpc_post_open(client, host, path, size);
@@ -116,6 +117,7 @@ ENTER_FUNC;
 			while	( sense_buff->current_value() != 0xFF )	{
 				message_pointer = Message;
 				info = Sensors::item(sense_buff->get_value());
+				dbgprintf("info->id = %d", (int)info->id);
 				make_one_sensor_message(n, info, sense_buff);
 				ESP_LOGI(TAG, "Message:%s", Message);
 				net_print(client, Message);
@@ -125,12 +127,13 @@ ENTER_FUNC;
 			}
 			(void)sense_buff->get_value();
 			net_print(client, "]");
-			httpc_close(client);
 			msleep(100);
 		}
+		httpc_close(client);
+		finish_httpc(client);
+		sense_buff->rewind_write();
+		rc = TRUE;
 	}
-	sense_buff->rewind_write();
-	rc = TRUE;
   err:;
 LEAVE_FUNC;
 	return	(rc);
@@ -160,6 +163,20 @@ sensor_collect(void)
 	time(&timeNow);
 
 	Sensors::collect(timeNow, sense_buff);
+	return	(TRUE);
+}
+
+extern	Bool
+sensor_collect(
+	SensorInfo	*info)
+{
+	time_t	timeNow;
+
+ENTER_FUNC;
+	time(&timeNow);
+
+	Sensors::collect(timeNow, sense_buff, info);
+LEAVE_FUNC;
 	return	(TRUE);
 }
 

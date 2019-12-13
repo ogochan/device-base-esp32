@@ -9,7 +9,7 @@ extern	void		wifi_scan_start(void);
 extern	void		wifi_scan_get(char *p);
 extern	void		wifi_scan_stop(void);
 extern	void		wifi_stop(void);
-extern	void		wifi_connect(char *ssid, char *password);
+extern	Bool		wifi_connect(char *ssid, char *password);
 extern	Bool		wifi_is_valid(void);
 
 #endif

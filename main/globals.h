@@ -3,6 +3,12 @@
 
 #include	"types.h"
 
+#define	STATUS_RUN			0
+#define	STATUS_SETUP		1
+#define	STATUS_ALL_RESET	2
+#define	STATUS_IDLE			3
+#define	STATUS_FAULT		4
+
 #ifdef	MAIN
 #define	GLOBAL	/*	*/
 #else
@@ -20,6 +26,9 @@ GLOBAL	char	my_device_id[SIZE_UUID + 1]
 GLOBAL	char	url_buff[SIZE_URL + 1];
 
 GLOBAL	int		sensor_interval;
+GLOBAL	int		led_schedule_interval;
 GLOBAL	char	*sensor_url;
+GLOBAL	float	upper_temperature_limit;
+GLOBAL	float	lower_temperature_limit;
 
 #endif
