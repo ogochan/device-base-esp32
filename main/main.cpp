@@ -6,13 +6,11 @@
 #include	<string.h>
 extern "C"{
 #include 	"config.h"
-//#include	<nvs.h>
 #include 	<freertos/FreeRTOS.h>
 #include 	<freertos/task.h>
-//#include	<freertos/event_groups.h>
 #include	<time.h>
 #include	<sys/time.h>
-//#include	"nvs.h"
+#include	"nvs.h"
 #include	"misc.h"
 #include	"wifi.h"
 #include	"device_depend.h"
