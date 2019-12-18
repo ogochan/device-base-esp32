@@ -27,6 +27,7 @@ extern "C" {
 #include	"utility.h"
 #include	"SensorInfo.h"
 #include	"BME280_Temp.h"
+#include	"Jar_garden.h"
 #include	"Sensors.h"
 #include	"sensor.h"
 
@@ -34,6 +35,7 @@ extern "C" {
 static	FAN		*fan;
 #endif
 static	Light	*light;
+static	Jar_garden	*jar_garden;
 
 typedef	struct	{
 	int8_t	no;
@@ -60,13 +62,15 @@ initialize_device(void)
 
 	light = new Light();
 	Sensors::add(light);
-	dbgprintf("light id = %d", (int)light->id);
+	jar_garden = new Jar_garden();
+	Sensors::add(jar_garden);
 
 #ifdef	HAVE_FAN
 	fan = new FAN();
 	Sensors::add(fan);
 	dbgprintf("fan id = %d", (int)fan->id);
 #endif
+
 	start_sensors();
 }
 
@@ -439,7 +443,7 @@ LEAVE_FUNC;
 }
 
 
-static	void
+static	Bool
 check_led(
 	tTime	*now)
 {
@@ -468,9 +472,10 @@ check_led(
 			memcpy(last_led, led, sizeof(LED) * NR_LED);
 		}
 	}
+	return	(FALSE);
 }
 
-static	void
+static	Bool
 check_led_schedule(
 	tTime	*now)
 {
@@ -489,10 +494,11 @@ check_led_schedule(
 			dbgprintf("last = %d", last);
 		}
 	}
+	return	(FALSE);
 }
 
 #ifdef	HAVE_SENSORS
-static	void
+static	Bool
 check_sensor(
 	tTime	*now)
 {
@@ -508,9 +514,10 @@ check_sensor(
 		}
 		last = at % sensor_interval;
 	}
+	return	(FALSE);
 }
 
-static	void
+static	Bool
 check_send(
 	tTime	*now)
 {
@@ -530,11 +537,12 @@ check_send(
 			sent = FALSE;
 		}
 	}
+	return	(FALSE);
 }
 #endif
 
 #ifdef	HAVE_FAN
-static	void
+static	Bool
 check_fan(
 	tTime	*now)
 {
@@ -550,23 +558,28 @@ check_fan(
 		dbgprintf("fan off = %s", ftos(lower_temperature_limit, 0, 1));
 	} else {
 		if	( now->tm_sec == 0 )	{
-			sense_buff->rewind_write();
-			sensor->get(sense_buff);
-			sense_buff->rewind_read();
-			sense_buff->get(&temp, sizeof(float));
-			dbgprintf("Temp = %s", ftos(temp, 0, 1));
-			speed = fan->speed();
-			if		(  temp > upper_temperature_limit )	{
+			if		( sensor->fValid )	{
+				sense_buff->rewind_write();
+				sensor->get(sense_buff);
+				sense_buff->rewind_read();
+				sense_buff->get(&temp, sizeof(float));
+				dbgprintf("Temp = %s", ftos(temp, 0, 1));
+				speed = fan->speed();
+				if		(  temp > upper_temperature_limit )	{
+					fan->set_switch(TRUE);
+				}
+				if		(  temp < lower_temperature_limit )	{
+					fan->set_switch(FALSE);
+				}
+				if		( speed != fan->speed() )	{
+					sensor_collect(fan);
+				}
+			} else {
 				fan->set_switch(TRUE);
-			}
-			if		(  temp < lower_temperature_limit )	{
-				fan->set_switch(FALSE);
-			}
-			if		( speed != fan->speed() )	{
-				sensor_collect(fan);
 			}
 		}
 	}
+	return	(FALSE);
 }
 #endif
 
@@ -584,4 +597,11 @@ initialize_schedules(void)
 	register_schedule_func(check_fan);
 #endif
 
+}
+
+extern	void
+finalize_schedules(void)
+{
+	sensor_collect(jar_garden);
+	sensor_send_server();
 }

@@ -13,6 +13,6 @@ extern	esp_err_t	httpc_close(esp_http_client_handle_t client);
 extern	esp_err_t	httpc_get(esp_http_client_handle_t client, char *host, char *path);
 extern	int			httpc_get_data(esp_http_client_handle_t client, uint8_t *buff, size_t len);
 extern	int			httpc_get_status(esp_http_client_handle_t client);
-extern	void		httpc_ota(char *host, char *path, char *session_key);
+extern	Bool		httpc_ota(char *host, char *path, char *session_key);
 
 #endif

@@ -255,7 +255,7 @@ typedef	struct	{
 	char	session_key[SIZE_UUID+1];
 }	ota_args;
 
-static	void
+static	Bool
 ota_task(
 	ota_args	*args)
 {
@@ -404,17 +404,18 @@ ENTER_FUNC;
 	} else {
 		if	( need_update )	{
 			dbgmsg("Prepare to restart system!");
+#if	0
 			esp_restart();
-			msleep(5000);
+#endif
 		}
 	}
 	ota_running = FALSE;
-	vTaskDelete(NULL);
+	//vTaskDelete(NULL);
 LEAVE_FUNC;
-    return ;
+	return (need_update);
 }
 
-extern	void
+extern	Bool
 httpc_ota(
 	char	*host,
 	char	*path,
@@ -428,5 +429,10 @@ httpc_ota(
 	strcpy(args.host, host);
 	strcpy(args.path, path);
 	strcpy(args.session_key, session_key);
+#if	0
     (void)xTaskCreate(ota_task, "ota_task", 8192, &args, 5, NULL);
+	return	FALSE;
+#else
+	return	(ota_task(&args));
+#endif
 }

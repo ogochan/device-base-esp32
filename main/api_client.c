@@ -179,29 +179,14 @@ api_get_data(
 	return	(rc);
 }
 
-extern	void
-api_get_device_info(void)
-{
-	esp_http_client_handle_t	client;
-	int		size;
-ENTER_FUNC;
-	client = initialize_httpc();
-	do	{
-		size = api_get_data(client, "/spec", my_device_id, my_session_key, (uint8_t *)ResponseMessage, SIZE_RESPONSE_BUFFER);
-	}	while	( size < 0 );
-	finish_httpc(client);
-LEAVE_FUNC;
-}
-
-
-extern	void
+extern	Bool
 api_exec_ota(void)
 {
 	char	real_path[SIZE_PATH+1];
 
 ENTER_FUNC;
 	sprintf(real_path, "/device/%s/farm", my_device_id);
-	httpc_ota(CONSOLE_HOST, real_path, my_session_key);
 LEAVE_FUNC;
+	return	(httpc_ota(CONSOLE_HOST, real_path, my_session_key));
 }
 

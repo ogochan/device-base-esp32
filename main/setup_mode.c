@@ -90,6 +90,17 @@ http_wifi_config(
 	_wifi_config(ResponseMessage);
 
     httpd_resp_send(req, "OK", 3);
+	if		( wifi_connect(ap_ssid, ap_pass) )	{
+		while	( !wifi_is_valid() )	{
+			msleep(1000);
+		}
+		dbgmsg( "network is OK");
+		open_device_info();
+		set_ap_ssid(ap_ssid);
+		set_ap_pass(ap_pass);
+		commit_device_info();
+		close_device_info();
+	}
     return ESP_OK;
 }
 
@@ -99,7 +110,8 @@ _device_new(
 {
 	cJSON	*root
 		,	*node;
-	char	user[SIZE_USER + 1]
+	static
+		char	user[SIZE_USER + 1]
 		,	pass[SIZE_PASS + 1];
 	Bool	ret;
 	esp_http_client_handle_t	client;
@@ -160,6 +172,18 @@ http_device_new(
     return ESP_OK;
 }
 
+static	esp_err_t
+http_device_reset(
+	httpd_req_t	*req)
+{
+	httpd_req_recv(req, ResponseMessage, req->content_len);
+	ResponseMessage[req->content_len] = 0;
+	httpd_resp_send(req, "OK", 3);
+	msleep(1000);
+	esp_restart();
+    return ESP_OK;
+}
+
 static	const	httpd_uri_t	handlers[] = {
     {
 		.uri      = "/wifi/scan",
@@ -175,6 +199,11 @@ static	const	httpd_uri_t	handlers[] = {
     { .uri      = "/device",
       .method   = HTTP_POST,
       .handler  = http_device_new,
+      .user_ctx = NULL,
+    },
+    { .uri      = "/reset",
+      .method   = HTTP_POST,
+      .handler  = http_device_reset,
       .user_ctx = NULL,
     },
 };
@@ -230,8 +259,6 @@ load_device_info(void)
 extern	void
 destroy_device_info(void)
 {
-	open_device_info();
-
 	memclear(my_ssid, SIZE_SSID + 1);
 	memclear(my_pass, SIZE_PASS + 1);
 	memclear(my_device_id, SIZE_UUID + 1);
@@ -241,6 +268,14 @@ destroy_device_info(void)
 
 	strcpy(my_ssid, DEFAULT_SSID);
 	strcpy(my_pass, DEFAULT_PASS);
+
+	save_device_info();
+}
+
+extern	void
+save_device_info(void)
+{
+	open_device_info();
 
 	set_my_ssid(my_ssid);
 	set_my_pass(my_pass);

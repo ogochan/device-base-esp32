@@ -34,13 +34,18 @@ register_schedule_func(
 	n_check_funcs ++;
 }
 
-extern	void
+extern	Bool
 check_schedule_funcs(
 	tTime	*now)
 {
 	int		i;
+	Bool	ret;
 
+	ret = FALSE;
 	for	( i = 0; i < n_check_funcs; i ++ )	{
-		check_funcs[i](now);
+		if	( check_funcs[i](now) )	{
+			ret = TRUE;
+		}
 	}
+	return	(ret);
 }

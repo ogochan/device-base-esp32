@@ -26,24 +26,26 @@ extern	"C"	{
 
 extern	"C"	{
 
-static	void
+static	Bool
 check_ota(
 	tTime	*now)
 {
 	static	int		ota_min;
 	int		at;
 	static	Bool	done;
+	Bool	ret;
 
+	ret = FALSE;
 	if		( now == NULL )	{
 		ota_min = random() % 1438 + 1;
-		dbgprintf("OTA check at %02d:%02d", ota_min / 60, ota_min % 60);
+		dbgprintf("OTA check  at %02d:%02d", ota_min / 60, ota_min % 60);
 		done = FALSE;
 	} else {
 		at = now->tm_hour * 60 + now->tm_min;
+		//ota_min = at - 1;
 		if		(	( !done )
 				&&	( at > ota_min ) )	{
-			api_exec_ota();
-			msleep(1000);
+			ret = api_exec_ota();
 			done = TRUE;
 		} else {
 			if	( at < ota_min )	{
@@ -51,6 +53,7 @@ check_ota(
 			}
 		}
 	}
+	return	(ret);
 }
 
 extern	void
@@ -59,12 +62,12 @@ initialize_schedule(void)
 	register_schedule_func(check_ota);
 }
 
-#if	1
 extern	void
 start_schedule(void)
 {
 	time_t	timeNow;
 	tTime	now;
+	Bool	stop;
 
 	time(&timeNow);
 
@@ -72,43 +75,14 @@ start_schedule(void)
 
 	check_schedule_funcs(NULL);
 
-	while	(true)	{
+	stop = FALSE;
+	while	( !stop )	{
 		time(&timeNow);
 		localtime_r(&timeNow, &now);
 
-		check_schedule_funcs(&now);
+		stop = check_schedule_funcs(&now);
 
 		msleep(1000);
 	}
 }
-#else
-static	void
-event_task(
-	void	*args)
-{
-	time_t	timeNow;
-	tTime	now;
-
-	time(&timeNow);
-
-	srandom(timeNow);
-
-	check_schedule_funcs(NULL);
-
-	while	(true)	{
-		time(&timeNow);
-		localtime_r(&timeNow, &now);
-
-		check_schedule_funcs(&now);
-
-		msleep(1000);
-	}
-}
-
-extern	void
-start_schedule(void)
-{
-    xTaskCreate(event_task, "event_task", 4096, NULL, 5, NULL);
-}
-#endif
-}
+}	//	extern C

@@ -38,8 +38,11 @@ main_task(
 	while	( !sntp_valid() )	{
 		msleep(1000*10);
 	}
+
 	dbgmsg( "all preparation is done");
 	start_schedule();
+	finalize_schedules();
+	esp_restart();
 }
 
 extern "C" void
